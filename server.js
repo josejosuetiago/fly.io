@@ -4,7 +4,7 @@ import https from "https";
 
 // === CONFIGURAÇÃO PRINCIPAL ===
 const TARGET = "https://morescosapp.shop"; // seu destino (ex: VPS, Nginx, etc.)
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 
