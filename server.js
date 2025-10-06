@@ -1,10 +1,10 @@
-import express from "express";
+wss express from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import https from "https";
 
 const app = express();
 
-const TARGET = "wss://morescosapp.shop"; // seu servidor SSH-WS ou V2Ray WS
+const TARGET = "https://morescosapp.shop"; // seu servidor SSH-WS ou V2Ray WS
 const PORT = process.env.PORT || 8080;
 
 // Middleware de log simples
