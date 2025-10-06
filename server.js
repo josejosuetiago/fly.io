@@ -1,53 +1,61 @@
-wss express from "express";
+import express from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import https from "https";
 
-const app = express();
-
-const TARGET = "https://morescosapp.shop"; // seu servidor SSH-WS ou V2Ray WS
+// === CONFIGURAÇÃO PRINCIPAL ===
+const TARGET = "https://morescosapp.shop"; // seu destino (ex: VPS, Nginx, etc.)
 const PORT = process.env.PORT || 8080;
 
-// Middleware de log simples
-app.use((req, res, next) => {
-  console.log(`[REQ] ${req.method} ${req.url}`);
-  next();
-});
+const app = express();
 
-// Proxy WebSocket e HTTP
+// === PROXY ===
 app.use(
   "/",
   createProxyMiddleware({
     target: TARGET,
     changeOrigin: true,
-    ws: true,
+    ws: true, // suporte WebSocket (101)
     secure: false,
-    logLevel: "warn",
     onProxyReq: (proxyReq, req, res) => {
       proxyReq.setHeader("Host", "morescosapp.shop");
     },
+    onProxyRes(proxyRes, req, res) {
+      // Altera status 101 e 200 OK conforme tipo de conexão
+      if (req.headers.upgrade && req.headers.upgrade.toLowerCase() === "websocket") {
+        res.statusCode = 101; // Switching Protocols
+      } else {
+        proxyRes.statusCode = 200;
+      }
+    },
     onError(err, req, res) {
-      console.error("[Proxy Error]", err.message);
-      if (!res.headersSent) res.status(502).send("Bad Gateway");
+      console.error("Erro de proxy:", err.message);
+      res.status(502).send("Bad Gateway");
     },
   })
 );
 
-// Rota de status
+// === ROTA DE TESTE LOCAL ===
 app.get("/status", (req, res) => {
-  res.status(200).send("✅ Proxy ativo no Fly.io 🚀");
+  res.status(200).send("Proxy ativo e funcionando ✅");
 });
 
-// Inicia o servidor e envia keep-alive
-app.listen(PORT, () => {
-  console.log(`✅ Proxy ativo na porta ${PORT} -> ${TARGET}`);
+// === KEEP-ALIVE AUTOMÁTICO ===
+function keepAlive() {
+  const url = `https://renderr-f5lj.onrender.com/status`;
+  https
+    .get(url, (res) => {
+      console.log(`[KEEPALIVE] Status: ${res.statusCode}`);
+    })
+    .on("error", (err) => {
+      console.log(`[KEEPALIVE] Erro: ${err.message}`);
+    });
+}
 
-  setInterval(() => {
-    https
-      .get(`https://${process.env.FLY_APP_NAME}.fly.dev/status`, (res) => {
-        console.log(`[Keep-Alive] Ping enviado | Status: ${res.statusCode}`);
-      })
-      .on("error", (err) => {
-        console.error("[Keep-Alive] Erro:", err.message);
-      });
-  }, 10 * 60 * 1000); // a cada 10 minutos
+// Dispara a cada 10 minutos
+setInterval(keepAlive, 10 * 60 * 1000);
+
+// === INICIAR SERVIDOR ===
+app.listen(PORT, () => {
+  console.log(`🚀 Proxy ativo na porta ${PORT} -> ${TARGET}`);
+  keepAlive();
 });
