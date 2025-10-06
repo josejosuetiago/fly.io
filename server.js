@@ -55,7 +55,7 @@ function keepAlive() {
 setInterval(keepAlive, 10 * 60 * 1000);
 
 // === INICIAR SERVIDOR ===
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Proxy ativo na porta ${PORT} -> ${TARGET}`);
   keepAlive();
 });
